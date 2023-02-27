@@ -12,18 +12,11 @@ from .eval_pysur import evaluate_fit as evaluate_GPR
 
 #----------------------------------------------------------------------------------------------------
 def _evaluate_GPR_at_EIM_nodes(X, fit_data):
-    """ Evaluate the GPR at one EIM node 
+    """ Evaluate the spline at one EIM node 
         For information on the inputs, please look at all_modes_surrogate()
     """
-
-    [h_eim_gpr_mode, eim_indicies] = fit_data
-    [q_log10, chi] = X
-
-    # Evaluate GPR fit using pySurrogate at each node
-    fit = [evaluate_GPR.getFitEvaluator(dict(h_eim_gpr_mode['node%s'%i]))([chi, np.log(q_log10)]) for i in range(len(eim_indicies))]
-
-    # Return result for given (chi, log(q))
-    return np.array(fit)
+    
+    raise NotImplementedError
 
 #----------------------------------------------------------------------------------------------------
 def _evaluate_splines_at_EIM_nodes(X, fit_data):
@@ -174,6 +167,7 @@ def surrogate_single_mode(q, chi, h_amp_gpr_mode, h_ph_gpr_mode, b_amp_mode, b_p
         - Inputs: q, chi, interpolation indices for given mode (l,m), gpr fits for (l,m), and basis matricies for (l,m).
         - Outputs: the approximated strain for the given mode.
     """
+    print(os.getpid())
     if q < 1:
         q = 1/q
         print('warning - taking the inverse of given mass-ratio.')
@@ -181,10 +175,10 @@ def surrogate_single_mode(q, chi, h_amp_gpr_mode, h_ph_gpr_mode, b_amp_mode, b_p
     # Evaluate GPR fit using pySurrogate at each node, append result for given (chi, log(q))
     amp, ph = [], []
     for eim_indx_amp in range(len(eim_indicies_amp_mode)):
-        amp_fit = evaluate_GPR.getFitEvaluator(dict(h_amp_gpr_mode['node%s'%eim_indx_amp]))
+        amp_fit = evalute_GPR.getFitEvaluator(dict(h_amp_gpr_mode['node%s'%eim_indx_amp]))
         amp.append(amp_fit([chi, np.log(q)]))
     for eim_indx_ph in range(len(eim_indicies_ph_mode)):
-        ph_fit = evaluate_GPR.getFitEvaluator(dict(h_ph_gpr_mode['node%s'%eim_indx_ph]))
+        ph_fit = evalute_GPR.getFitEvaluator(dict(h_ph_gpr_mode['node%s'%eim_indx_ph]))
         ph.append(ph_fit([chi, np.log(q)]))
 
     # Interpolate onto basis functions
@@ -207,15 +201,35 @@ def surrogate_all_modes(modes, X_sur, fit_data_dict_amp, fit_data_dict_ph, B_amp
 
     q_input, chi = X_sur[0], X_sur[1]
 
-    h_approx = {}
-    for i,mode in enumerate(modes):
-        h_amp_gpr_mode, eim_indicies_amp_mode = fit_data_dict_amp[mode][0], fit_data_dict_amp[mode][1]
-        h_ph_gpr_mode, eim_indicies_ph_mode = fit_data_dict_ph[mode][0], fit_data_dict_ph[mode][1]
-        B_amp_mode, B_ph_mode = B_amp[mode], B_ph[mode]
+    h_amp_gpr, eim_indicies_amp = fit_data_dict_amp[0], fit_data_dict_amp[1]
+    h_ph_gpr, eim_indicies_ph = fit_data_dict_ph[0], fit_data_dict_ph[1]
 
-        h_approx_mode = surrogate_single_mode(q_input, chi, h_amp_gpr_mode, h_ph_gpr_mode, B_amp_mode, B_ph_mode, eim_indicies_amp_mode, eim_indicies_ph_mode)
+    try:
+        n_gpu = int(str(sp.check_output(["nvidia-smi", "-L"])).count('UUID'))
+    except:
+        n_gpu = 0
+    print(f"There are {n_gpu} gpu(s)")
 
-        h_approx[mode] = np.array(np.conj(h_approx_mode[i]))
+    # open multiprocessing pool across all available cores
+    if n_gpu == 0:
+        cpus = os.cpu_count()
+    else:
+        cpus = 1
+    print(f"Parallelizing over {cpus} CPUs")
+    pool = Pool(processes = cpus)
+
+    # zip data for all modes into iterable list of args per mode
+    args = zip(repeat(q_input), repeat(chi), h_amp_gpr.values(), h_ph_gpr.values(), B_amp.values(), B_ph.values(), eim_indicies_amp.values(), eim_indicies_ph.values())
+    h_approx_mode = pool.starmap_async(surrogate_single_mode, args).get()  # .get() allows returned values to be read as one data set
+
+    # end multiprocessing
+    pool.close()
+    pool.join()
+
+    # re-package result into dictionary with modes as keys
+    h_approx={}
+    for i,m in enumerate(modes):
+        h_approx[m] = np.array(np.conj(h_approx_mode[i]))
 
     return h_approx
 

@@ -57,7 +57,7 @@ def evaluate_surrogate(X_sur, X_calib, X_bounds, time, modes, modes_available, a
         B_dict_1, B_dict_2 : dictionary of the basis matrices obtained from h5 file.
                              Modes used as keys.
 
-        fit_func : form of fitting function. options : 'spline_1d' or 'GPR_fits'
+        fit_func : form of fitting function. options : 'spline_1d' or 'GPR_2d'
 
         decomposition_funcs : form of data decomposition function to combine datapieces for 22 and
                               higher modes respectively. e.g. Amp/Phase to full or real/imag to full
@@ -91,9 +91,8 @@ def evaluate_surrogate(X_sur, X_calib, X_bounds, time, modes, modes_available, a
                       orb_phase, inclination, mode_sum)
     
     # uncalibrated waveforms in geometric units
-    hsur_raw_dict = fits.all_modes_surrogate(modes, X_sur, fit_data_dict_1, fit_data_dict_2, \
-                           B_dict_1, B_dict_2, lmax, fit_func, decomposition_funcs, norm)
-    
+    hsur_raw_dict = fits.all_modes_surrogate(modes, X_sur, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2, lmax, fit_func, decomposition_funcs, norm)
+    #hsur_raw_dict = fits.surrogate_all_modes(modes, X_sur, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2)    
     # process the raw surrogate output depending on the user inputs
     t_surrogate, h_surrogate = utils.obtain_processed_output(X_calib, time, hsur_raw_dict, alpha_coeffs, 
                                     beta_coeffs, alpha_beta_functional_form, calibrated, M_tot, dist_mpc, 

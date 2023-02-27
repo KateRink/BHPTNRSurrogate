@@ -8,22 +8,24 @@ import numpy as np
 import scipy
 from scipy.interpolate import splrep, splev
 from . import utils
-from .eval_pysur import evaluate_fit as evaluate_GPR
+from .eval_pysur import evaluate_fit #as evaluate_GPR
 
 #----------------------------------------------------------------------------------------------------
 def _evaluate_GPR_at_EIM_nodes(X, fit_data):
     """ Evaluate the GPR at one EIM node 
         For information on the inputs, please look at all_modes_surrogate()
     """
+   
+        # Evaluate GPR fit using pySurrogate at each node, append result for given (chi, log(q))
+    amp, ph = [], []
+    for eim_indx_amp in range(len(eim_indicies_amp_mode)):
+        amp_fit = evaluate_fit.getFitEvaluator(dict(h_amp_gpr_mode['node%s'%eim_indx_amp]))
+        amp.append(amp_fit([chi, np.log(q)]))
+    for eim_indx_ph in range(len(eim_indicies_ph_mode)):
+        ph_fit = evaluate_fit.getFitEvaluator(dict(h_ph_gpr_mode['node%s'%eim_indx_ph]))
+        ph.append(ph_fit([chi, np.log(q)]))
 
-    [h_eim_gpr_mode, eim_indicies] = fit_data
-    [q_log10, chi] = X
-
-    # Evaluate GPR fit using pySurrogate at each node
-    fit = [evaluate_GPR.getFitEvaluator(dict(h_eim_gpr_mode['node%s'%i]))([chi, np.log(q_log10)]) for i in range(len(eim_indicies))]
-
-    # Return result for given (chi, log(q))
-    return np.array(fit)
+    raise NotImplementedError
 
 #----------------------------------------------------------------------------------------------------
 def _evaluate_splines_at_EIM_nodes(X, fit_data):
@@ -181,10 +183,10 @@ def surrogate_single_mode(q, chi, h_amp_gpr_mode, h_ph_gpr_mode, b_amp_mode, b_p
     # Evaluate GPR fit using pySurrogate at each node, append result for given (chi, log(q))
     amp, ph = [], []
     for eim_indx_amp in range(len(eim_indicies_amp_mode)):
-        amp_fit = evaluate_GPR.getFitEvaluator(dict(h_amp_gpr_mode['node%s'%eim_indx_amp]))
+        amp_fit = evaluate_fit.getFitEvaluator(dict(h_amp_gpr_mode['node%s'%eim_indx_amp]))
         amp.append(amp_fit([chi, np.log(q)]))
     for eim_indx_ph in range(len(eim_indicies_ph_mode)):
-        ph_fit = evaluate_GPR.getFitEvaluator(dict(h_ph_gpr_mode['node%s'%eim_indx_ph]))
+        ph_fit = evaluate_fit.getFitEvaluator(dict(h_ph_gpr_mode['node%s'%eim_indx_ph]))
         ph.append(ph_fit([chi, np.log(q)]))
 
     # Interpolate onto basis functions

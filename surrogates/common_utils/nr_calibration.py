@@ -15,6 +15,14 @@ def alpha_beta_BHPTNRSur1dq1e4(x,a,b,c,d):
     return 1 + a*x + b*x**2 + c*x**3 + d*x**4
 
 #----------------------------------------------------------------------------------------------------
+def alpha_beta_BHPTNRSur2dq1e3(x,a,b,c,d):
+    """
+    functional form of alpha and beta scaling factors used in BHPTNRSur1dq1e4 model
+    """
+
+    return 1 + a*x + b*x**2 + c*x**3 + d*x**4
+
+#----------------------------------------------------------------------------------------------------
 def evaluate_alpha(X, l, coefs_alpha, alpha_beta_functional_form):
     """ Implements alpha-beta-scaling to match NR 
         Computes alpha value at a given point in the paprameter space
@@ -100,4 +108,92 @@ def generate_calibrated_ppBHPT(X_input, raw_time, h_raw_dict, coefs_alpha, coefs
     t_calib = beta_scaling_time(raw_time, beta)
     
     return t_calib, hcal_dict
+
+#----------------------------------------------------------------------------------------------------
+### GPR TEMP ###
+#----------------------------------------------------------------------------------------------------
+
+def alpha_scaling_h_GPR(q, chi, h, calibrated=True):
+    # KR - final func will incorporate spin into scaling
+    """ Implements alpha-scaling to match NR. 
+        - Inputs: single mass-ratio and spin, array of strain data.
+        - Outputs: array of scaled strain values (h*alpha, alpha hard-coded in function).
+    """
+    if calibrated == False:
+        alpha = 1
+    else:
+        if chi != 0:
+            print("chi not accounted for in scaling (for preliminary testing only)")
+        nu = q/(1.+q)**2
+        alpha = 1.0-1.352854*nu-1.223006*nu**2+8.601968*nu**3-46.74562*nu**4+0*nu**5 
+        
+    h_scaled=np.array(h)*alpha
     
+    return h_scaled
+
+#----------------------------------------------------------------------------------------------------
+def beta_scaling_time_GPR(q, chi, times, calibrated=True):
+    """ Implements alpha-scaling to match NR.
+        - Inputs: mass-ratio, spin, and times; calibrated=False sets alpha = 1.
+        - Outputs: array of scaled times (times*alpha, alpha hard-coded in function).
+    """
+    if chi >= 0.0:
+        t = times['positive_spin']
+    else:
+        t = times['negative_spin']
+    
+    if calibrated == False:
+        alpha = 1
+    else:
+        if chi != 0:
+            print("chi not accounted for in scaling (for preliminary testing only)")
+        nu = q/(1.+q)**2
+        alpha = 1.0-1.352854*nu-1.223006*nu**2+8.601968*nu**3-46.74562*nu**4+0*nu**5
+        
+    t_scaled = np.array(t)*alpha
+    
+    return t_scaled
+
+#----------------------------------------------------------------------------------------------------
+def generate_calibrated_ppBHPT_GPR(X_input, raw_time, h_raw_dict, coefs_alpha, coefs_beta,
+                               alpha_beta_functional_form):
+    """
+    rescales all raw ppBHPT waveform modes to match NR
+
+    Inputs
+    ======
+
+        X_input : array of nr calibration parameterization e.g. [1/q, spin]
+        time : array of uncalibrated time on which surrogate has been trained on
+        h_raw_dict : dictiornary of uncalibrated modes
+        coeffs_alpha : dictionary of alpha values obtained from calibration mode-by-mode
+        coeffs_beta : beta value obtain from calibration - used in time rescaling
+        alpha_beta_functional_form : function to use for nr calibration - must come from
+                                     common_utils.nr_calibration.py
+
+    Outputs
+    =======
+
+        t_calib : rescaled time array
+        hcal_dict : dictiornary of rescaled modes
+
+    """
+
+    q_test = 10
+    chi_test = 0.0
+
+    hcal_dict = {}
+    # scale all modes
+    for mode in h_raw_dict.keys():
+        (l,m)=mode
+        # evaluate alpha
+        #alpha = evaluate_alpha(X_input, l, coefs_alpha, alpha_beta_functional_form)
+        # scale the strain
+        hcal_dict[mode] = alpha_scaling_h_GPR(q_test, chi_test, h_raw_dict[mode], calibrated=False)
+
+    # evaluate beta
+    #beta = evaluate_beta(X_input, coefs_beta, alpha_beta_functional_form)
+    # scale the time
+    t_calib = beta_scaling_time_GPR(q_test, chi_test, raw_time, calibrated=False)
+
+    return t_calib, hcal_dict
