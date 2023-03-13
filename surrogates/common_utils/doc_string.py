@@ -29,8 +29,8 @@ def generic_doc_for_models() -> None:
     =====
     q:     mass ratio (with q >=1)
     
-    chi1: dimensionless spin of the primary black hole where -1 <= chi1 <= 1
-          Default: None
+    chi1: dimensionless spin of the primary black hole where -0.6 <= chi1 <= 0.6
+          Default: 0.0
           Not Implemented in most models
     
     chi2: dimensionless spin of the secondary black hole where -1 <= chi2 <= 1

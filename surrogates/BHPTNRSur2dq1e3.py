@@ -24,6 +24,7 @@ import common_utils.doc_string as docs
 
 # h5 data directory
 h5_data_dir = os.path.dirname(os.path.abspath(__file__)) + '/../data'
+
 # load all fits data
 times, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2, \
     alpha_coeffs, beta_coeffs = load.load_BHPTNRSur2dq1e3_surrogate(h5_data_dir)
@@ -40,6 +41,9 @@ def generate_surrogate(q, spin1=0.0, spin2=None, ecc=None, ano=None, modes=None,
     Input
     =====
     q:      mass ratio
+    
+    spin1: spin on primary object, ranging from [-0.6, 0.6] for spinning 2D surrogate.
+           Default: 0.0 (uses poisitve spin data)
     
     modes:  list of modes
             Default (None) corresponds to all available modes in the model
@@ -100,7 +104,7 @@ def generate_surrogate(q, spin1=0.0, spin2=None, ecc=None, ano=None, modes=None,
             
     """
 
-    modes_available = [(2,2),(2,1),(3,1),(3,2),(3,3),(4,2),(4,3),(4,4)] #KR - include:,  (5,3),(5,4),(5,5),(6,4),(6,5),(6,6),(7,5),(7,6),(7,7),(8,6),(8,7),(8,8),(9,7),(9,8),(9,9),(10,8),(10,9)]
+    modes_available = [(2,2),(2,1),(3,1),(3,2),(3,3),(4,2),(4,3),(4,4)]
 
     if modes==None:
         modes = modes_available
@@ -147,8 +151,3 @@ def generate_surrogate(q, spin1=0.0, spin2=None, ecc=None, ano=None, modes=None,
             norm, mode_sum, neg_modes, lmax, CoorbToInert)
 
     return t_surrogate, h_surrogate
-            
-
-q_test = 10
-chi_test = 0.0
-test = generate_surrogate(q_test, modes=None, spin1=chi_test, M_tot=None, dist_mpc=None, orb_phase=None, inclination=None, neg_modes=False, mode_sum=False, lmax=4, calibrated=False)

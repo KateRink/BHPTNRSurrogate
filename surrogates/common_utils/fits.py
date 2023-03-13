@@ -2,6 +2,7 @@
 ## BHPTNRSurrogate module
 ## Description : evaluates the (spline or GPR) surrogate model
 ## Author : Tousif Islam, Nov 2022 [tislam@umassd.edu / tousifislam24@gmail.com]
+## GPR Contributuion: Katie Rink, Mar 2023 [krink@utexas.edu]
 ##==============================================================================
 
 import numpy as np
@@ -106,33 +107,33 @@ def all_modes_surrogate(modes, X_input, fit_data_dict_1, fit_data_dict_2, \
     
         modes : list of modes to evaluate
         
-        X_input :  array of surrogate parameterization e.g. [log(q), spin1, spin2]
+        X_input :  array of surrogate parameterization e.g. [log(q), spin1]
 
         fit_data_dict_1, fit_data_dict_2 : dictionary of fit data obtained for two datapieces from 
                                            the h5 file.
-                                           Keys are the modes.
-                                           Structure may depend on ether the data comes from spline 
-                                           fits or GPR fits. However, they should always be packed 
-                                           in fit_data_dict_1 and fit_data_dict_2. 
-                                           Make sure to modify your data loading script to achieve
-                                           this if necessary.
+                                           - Keys are the modes.
+                                           - Structure may depend on whether the data comes from spline 
+                                             fits or GPR fits. However, they should always be packed 
+                                             into fit_data_dict_1 and fit_data_dict_2. 
+                                           - IF ADDING NEW MODEL: Make sure to modify your data loading script to achieve
+                                             this if necessary.
 
         B_dict_1, B_dict_2 : dictionary of the basis matrices obtained from h5 file.
-                             Modes used as keys.
+                             - Keys are the modes.
 
-        fit_func : form of fitting function. options : 'spline_1d' or 'GPR_fits'
+        fit_func : form of fitting function. 
+                   - Options : 'spline_1d' or 'GPR_2d'
 
         decomposition_funcs : form of data decomposition function to combine datapieces for 22 and
                               higher modes respectively. e.g. Amp/Phase to full or real/imag to full
                               etc. These functions are available at common_utils.utils.py
 
         norm : overall normalization factor to be multiplied to final waveform. This depends on the 
-              way the surrogate have been constructed. Mostly norm=1/q or norm=1. 
+              way the surrogate have been constructed. Most often, norm=1/q or norm=1. 
     
     Outputs
     =======
-    
-        t_surrogate : time array
+
         h_surrogate : dictionary of modes  
         
     """
@@ -164,58 +165,3 @@ def all_modes_surrogate(modes, X_input, fit_data_dict_1, fit_data_dict_2, \
                                                             fit_func, decomposition_func, norm)
                 
     return h_approx_dict
-
-#----------------------------------------------------------------------------------------------------
-### GPR TEMP ###
-#----------------------------------------------------------------------------------------------------
-
-def surrogate_single_mode(q, chi, h_amp_gpr_mode, h_ph_gpr_mode, b_amp_mode, b_ph_mode, eim_indicies_amp_mode, eim_indicies_ph_mode):
-    """ Calculates scaled  h_approx = amp*exp(i*ph) from given single mode fitting params.
-        - Inputs: q, chi, interpolation indices for given mode (l,m), gpr fits for (l,m), and basis matricies for (l,m).
-        - Outputs: the approximated strain for the given mode.
-    """
-    if q < 1:
-        q = 1/q
-        print('warning - taking the inverse of given mass-ratio.')
-
-    # Evaluate GPR fit using pySurrogate at each node, append result for given (chi, log(q))
-    amp, ph = [], []
-    for eim_indx_amp in range(len(eim_indicies_amp_mode)):
-        amp_fit = evaluate_GPR.getFitEvaluator(dict(h_amp_gpr_mode['node%s'%eim_indx_amp]))
-        amp.append(amp_fit([chi, np.log(q)]))
-    for eim_indx_ph in range(len(eim_indicies_ph_mode)):
-        ph_fit = evaluate_GPR.getFitEvaluator(dict(h_ph_gpr_mode['node%s'%eim_indx_ph]))
-        ph.append(ph_fit([chi, np.log(q)]))
-
-    # Interpolate onto basis functions
-    h_approx_amp = np.dot(b_amp_mode.transpose(), np.array(amp))
-    h_approx_ph = np.dot(b_ph_mode.transpose(), np.array(ph))
-
-    # Calculate approximate strain as h = amp*exp(i*ph)
-    h_approx = []
-    for i in range(len(h_approx_amp)):
-        h_approx.append(utils.amp_ph_to_comp(h_approx_amp[i], h_approx_ph[i]))
-    #h_approx = alpha_scaling_h(q,chi,h_approx)*(1/q)
-
-    return h_approx
-
-def surrogate_all_modes(modes, X_sur, fit_data_dict_amp, fit_data_dict_ph, B_amp, B_ph):
-    """ Calculates h_approx(q, chi), parallelized over all modes.
-        - Inputs: modes to calculate, q, chi, interpolation indices, gpr fits, and basis matricies.
-        - Outputs: dictionary of the approximated strain for all modes.
-    """
-
-    q_input, chi = X_sur[0], X_sur[1]
-
-    h_approx = {}
-    for i,mode in enumerate(modes):
-        h_amp_gpr_mode, eim_indicies_amp_mode = fit_data_dict_amp[mode][0], fit_data_dict_amp[mode][1]
-        h_ph_gpr_mode, eim_indicies_ph_mode = fit_data_dict_ph[mode][0], fit_data_dict_ph[mode][1]
-        B_amp_mode, B_ph_mode = B_amp[mode], B_ph[mode]
-
-        h_approx_mode = surrogate_single_mode(q_input, chi, h_amp_gpr_mode, h_ph_gpr_mode, B_amp_mode, B_ph_mode, eim_indicies_amp_mode, eim_indicies_ph_mode)
-
-        h_approx[mode] = np.array(np.conj(h_approx_mode[i]))
-
-    return h_approx
-

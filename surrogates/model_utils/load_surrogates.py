@@ -1,8 +1,8 @@
 ##==============================================================================
 ## BHPTNRSurrogate module
-## Description : loads BHPTNRSur1dq1e4 surrogate fits data
+## Description : loads BHPTNRSur1dq1e4/BHPTNRSur2dq1e3 surrogate fits data
 ## Author : Tousif Islam, Aug 2022 [tislam@umassd.edu / tousifislam24@gmail.com]
-## Modified : 
+## BHPTNRSur2dq1e3 Author: Katie Rink, Mar 2023 [krink@utexas.edu]
 ##==============================================================================
 
 import numpy as np
@@ -30,12 +30,12 @@ have been constrcuted using splines or GPR).
         time : array of time on which surrogate has been trained on - read from h5 file
         fit_data_dict_1, fit_data_dict_2 : dictionary of fit data obtained for two datapieces from 
                                            the h5 file.
-                                           Keys are the modes.
-                                           Structure may depend on whether the data comes from spline 
-                                           fits or GPR fits. However, they should always be packed 
-                                           in fit_data_dict_1 and fit_data_dict_2. 
-                                           Make sure to modify your data loading script to achieve
-                                           this if necessary.
+                                           - Keys are the modes.
+                                           - Structure may depend on whether the data comes from spline 
+                                             fits or GPR fits. However, they should always be packed 
+                                             in fit_data_dict_1 and fit_data_dict_2. 
+                                           - IF ADDING NEW MODEL: Make sure to modify your data loading script to achieve
+                                             this if necessary.
         B_dict_1, B_dict_2 : dictionary of the basis matrices obtained from h5 file.
                              Modes used as keys.
         alpha_coeffs : dictionary of alpha values obtained from calibration mode-by-mode
@@ -83,6 +83,8 @@ def load_BHPTNRSur2dq1e3_surrogate(h5_data_dir):
     
     """ 
     Assumes the file BHPTNRSur2dq1e3.h5 is located in the h5_data_dir directory.
+    
+    NOTE: times is dictionary with times.keys() = ['negative_spin', 'positive_spin']
     """
 
     #raise NotImplementedError
@@ -110,7 +112,7 @@ def load_BHPTNRSur2dq1e3_surrogate(h5_data_dir):
     nrcalib_modes = [(2,2),(3,3),(4,4),(5,5)]
 
     # obtain all fit data
-    time, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2, alpha_coeffs, beta_coeffs \
+    times, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2, alpha_coeffs, beta_coeffs \
                     = load_gpr.load_surrogate(h5_data_dir, fname, wf_modes, nrcalib_modes)
 
-    return time, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2, alpha_coeffs, beta_coeffs
+    return times, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2, alpha_coeffs, beta_coeffs

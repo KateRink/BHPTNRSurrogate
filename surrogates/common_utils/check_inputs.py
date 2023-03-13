@@ -29,15 +29,12 @@ def check_domain_of_validity(X_in, X_bounds):
     if isinstance(X_in,(list))==False and isinstance(X_in,(float,int))==True:
         X_in_q = [X_in]
         X_in_chi = []
-        X_bounds_q_low = X_bounds[0]
-        X_bounds_q_high = X_bounds[1]
+        X_bounds_q_low, X_bounds_q_high = X_bounds[0], X_bounds[1]
     elif (isinstance(X_in,(list))==True) and (isinstance(X_in[0],(float,int))==True) and (isinstance(X_in[1],(float,int))==True):
         X_in_q = [X_in[0]]
         X_in_chi = [X_in[1]]
-        X_bounds_q_low = X_bounds[0][0]
-        X_bounds_q_high = X_bounds[1][0]
-        X_bounds_chi_low = X_bounds[0][1]
-        X_bounds_chi_high = X_bounds[1][1]
+        X_bounds_q_low, X_bounds_q_high = X_bounds[0][0], X_bounds[1][0]
+        X_bounds_chi_low, X_bounds_chi_high = X_bounds[0][1], X_bounds[1][1]
     # raise error for all other scenarios
     else:
         raise ValueError("param types are not matching with bound types")

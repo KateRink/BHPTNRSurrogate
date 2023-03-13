@@ -1,24 +1,21 @@
 ##==============================================================================
 ## BHPTNRSurrogate module
 ## Description : loads GPR surrogate fits data
+## Author: Katie Rink, Mar 2023 [krink@utexas.edu]
 ##==============================================================================
 
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import scipy
-#from scipy.interpolate import InterpolatedUnivariateSpline as Spline
-#from scipy.interpolate import splrep, splev
 import hashlib
 import cmath as c
 import os
 import hdfdict
 import copy
 import subprocess as sp
-#from multiprocessing import Pool
 from itertools import repeat
 import sys
-#sys.path.append("/data/krink/pysurrogate/") # swap with pysur in git repo
 #import pySurrogate as pySur
 
 #----------------------------------------------------------------------------------------------------
@@ -47,24 +44,22 @@ def read_nrcalib_info(f, nrcalib_modes):
 def load_surrogate(h5_data_dir, fname, wf_modes, nrcalib_modes):
     """ Loads all interpolation data.
             - Included modes = [(2,1),(3,1),(2,2),(3,2),(4,2),(3,3),(4,3),(4,4)]
-            - NOTE: Requires EMRISur2dq1e4.h5 to be in the same directory as this script.
+            - NOTE: Requires h5 file to be in the same directory as this script.
             - Returns:
-                - time, eim_indicies_amp, eim_indicies_ph, b_amp, b_ph, h_amp_gpr, h_ph_gpr
-                - NOTE: time is dictionary with time.keys() = ['negative_spin', 'positive_spin']
+                - times, eim_indicies_amp, eim_indicies_ph, b_amp, b_ph, h_amp_gpr, h_ph_gpr
+                - NOTE: times is dictionary with times.keys() = ['negative_spin', 'positive_spin']
     """
-    with h5py.File('%s/%s'%(h5_data_dir,fname), 'r') as file:  # KR - FINAL NAME: EMRISur2dq1e4.h5
+    with h5py.File('%s/%s'%(h5_data_dir,fname), 'r') as file:
 
         # dicts to copy .h5 file data into (needed for surrogate generation)
-        #h_amp_gpr, h_ph_gpr = {}, {}
         b_dict_amp, b_dict_ph = {}, {}
         fit_data_dict_amp, fit_data_dict_ph = {}, {}
-        #eim_indicies_amp, eim_indicies_ph = {}, {}
-        time = {}
+        times = {}
 
         for spin_sign in ['negative_spin', 'positive_spin']:
-            time[spin_sign] = copy.deepcopy(file[spin_sign]["l2_m2"]["times"][()]) # same times for all modes
+            times[spin_sign] = copy.deepcopy(file[spin_sign]["l2_m2"]["times"][()]) # same times for all modes
 
-            for mode in modes: # modes defined at top of script
+            for mode in modes:
 
                 # Copy data groups we need to access from hdf5 file into output dicts.
 
@@ -161,5 +156,4 @@ def load_surrogate(h5_data_dir, fname, wf_modes, nrcalib_modes):
             # nr calibration info
             alpha_coeffs, beta_coeffs = read_nrcalib_info(file, nrcalib_modes)
 
-    return time, fit_data_dict_amp, fit_data_dict_ph, b_dict_amp, b_dict_ph, alpha_coeffs, beta_coeffs
-
+    return times, fit_data_dict_amp, fit_data_dict_ph, b_dict_amp, b_dict_ph, alpha_coeffs, beta_coeffs

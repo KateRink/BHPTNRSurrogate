@@ -133,6 +133,7 @@ def alpha_scaling_h_GPR(q, chi, h, calibrated=True):
 
 #----------------------------------------------------------------------------------------------------
 def beta_scaling_time_GPR(q, chi, times, calibrated=True):
+    # KR - final func will incorporate spin into scaling
     """ Implements alpha-scaling to match NR.
         - Inputs: mass-ratio, spin, and times; calibrated=False sets alpha = 1.
         - Outputs: array of scaled times (times*alpha, alpha hard-coded in function).
