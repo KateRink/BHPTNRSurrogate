@@ -25,14 +25,14 @@ import common_utils.doc_string as docs
 # h5 data directory
 h5_data_dir = os.path.dirname(os.path.abspath(__file__)) + '/../data'
 # load all fits data
-time, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2, \
+times, fit_data_dict_1, fit_data_dict_2, B_dict_1, B_dict_2, \
     alpha_coeffs, beta_coeffs = load.load_BHPTNRSur2dq1e3_surrogate(h5_data_dir)
 
 print("SURROGATE LOADED")
 #---------------------------------------------------------------------------------------------------- 
 # add docstring from utility
 @docs.copy_doc(docs.generic_doc_for_models,docs.BHPTNRSur2dq1e3_doc)
-def generate_surrogate(q, spin1=None, spin2=None, ecc=None, ano=None, modes=None, M_tot=None, dist_mpc=None, orb_phase=None, inclination=None, neg_modes=False, mode_sum=False, lmax=4, calibrated=False):
+def generate_surrogate(q, spin1=0.0, spin2=None, ecc=None, ano=None, modes=None, M_tot=None, dist_mpc=None, orb_phase=None, inclination=None, neg_modes=False, mode_sum=False, lmax=4, calibrated=False):
 
     """ 
     Description : Top-level function to generate surrogate waveform in either geometric or physical units
@@ -105,12 +105,13 @@ def generate_surrogate(q, spin1=None, spin2=None, ecc=None, ano=None, modes=None
     if modes==None:
         modes = modes_available
         
+    if spin1 < 0.0:
+        time = times['negative_spin']
+    else:
+        time = times['positive_spin']
+        
     # define the parameterization for surrogate
     X_sur = [np.log10(q), spin1]
-    print("type(X_sur) = ", type(X_sur))
-    print("len(X_sur) = ", len(X_sur))
-    print("type(X_sur[0]) = ", type(X_sur[0]))
-    print("type(X_sur[1]) = ", type(X_sur[1]))
     
     # define parameterization for nr calibration
     X_calib = 1/q
