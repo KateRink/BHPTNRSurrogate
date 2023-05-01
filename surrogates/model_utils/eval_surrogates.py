@@ -82,7 +82,6 @@ def evaluate_surrogate(X_sur, X_calib, X_bounds, time, modes, modes_available, a
         
         h_surrogate : dictiornary of modes if mode_sum not requested
                       full waveform if mode_sum is requested
-    
      
     """
     
